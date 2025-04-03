@@ -9,8 +9,32 @@ class MyGameApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: GameScreen(),
+      home: StartScreen(),  // StartScreen is now the first screen
+    );
+  }
+}
+
+class StartScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.blueAccent,
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            // Navigate to the game screen when the button is pressed
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => GameScreen()),
+            );
+          },
+          child: Text('Start Game', style: TextStyle(fontSize: 20)),
+          style: ElevatedButton.styleFrom(
+            padding: EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+            backgroundColor: Colors.green,  // Background color of the button
+            foregroundColor: Colors.white, // Text color
+          ),
+        ),
       ),
     );
   }
@@ -32,6 +56,8 @@ class _GameScreenState extends State<GameScreen> {
     Offset(300, 600), // Obstacle 3
   ];
 
+  bool gameOver = false;
+
   void movePlayer(double dx, double dy) {
     setState(() {
       double newPlayerX = playerX + dx;
@@ -40,7 +66,8 @@ class _GameScreenState extends State<GameScreen> {
       // Collision detection with obstacles
       for (var obstacle in obstacles) {
         if ((newPlayerX - obstacle.dx).abs() < 40 && (newPlayerY - obstacle.dy).abs() < 40) {
-          // If the player collides with an obstacle, stop the movement
+          // If the player collides with an obstacle, stop the movement and end the game
+          gameOver = true;
           return;
         }
       }
@@ -53,6 +80,26 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (gameOver) {
+      return Scaffold(
+        appBar: AppBar(title: Text('Game Over')),
+        body: Center(
+          child: ElevatedButton(
+            onPressed: () {
+              // Navigate back to start screen
+              Navigator.pop(context);
+            },
+            child: Text('Restart'),
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+              backgroundColor: Colors.red,  // Button background color
+              foregroundColor: Colors.white, // Text color
+            ),
+          ),
+        ),
+      );
+    }
+
     return Stack(
       children: [
         GestureDetector(
@@ -72,6 +119,11 @@ class _GameScreenState extends State<GameScreen> {
               movePlayer(-10, 0); // Move left
             },
             child: Text("Left"),
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              backgroundColor: Colors.blue,  // Button background color
+              foregroundColor: Colors.white, // Text color
+            ),
           ),
         ),
         Positioned(
@@ -82,6 +134,11 @@ class _GameScreenState extends State<GameScreen> {
               movePlayer(10, 0); // Move right
             },
             child: Text("Right"),
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              backgroundColor: Colors.blue,  // Button background color
+              foregroundColor: Colors.white, // Text color
+            ),
           ),
         ),
         Positioned(
@@ -92,6 +149,11 @@ class _GameScreenState extends State<GameScreen> {
               movePlayer(0, -10); // Move up
             },
             child: Text("Up"),
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              backgroundColor: Colors.blue,  // Button background color
+              foregroundColor: Colors.white, // Text color
+            ),
           ),
         ),
         Positioned(
@@ -102,6 +164,11 @@ class _GameScreenState extends State<GameScreen> {
               movePlayer(0, 10); // Move down
             },
             child: Text("Down"),
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              backgroundColor: Colors.blue,  // Button background color
+              foregroundColor: Colors.white, // Text color
+            ),
           ),
         ),
       ],
