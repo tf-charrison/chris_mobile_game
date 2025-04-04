@@ -43,14 +43,22 @@ class StartScreen extends StatelessWidget {
 
 class Obstacle {
   Offset position;
-  double speed;
+  double speedX;
+  double speedY;
 
-  Obstacle(this.position, this.speed);
+  Obstacle(this.position, this.speedX, this.speedY);
 
-  void moveDown(double maxHeight) {
-    position = Offset(position.dx, position.dy + speed);
-    if (position.dy > maxHeight) {
-      position = Offset(position.dx, 0); // Reset to top
+  void move(double maxWidth, double maxHeight) {
+    // Move in both X and Y directions
+    position = Offset(position.dx + speedX, position.dy + speedY);
+
+    // Bounce off edges of the screen
+    if (position.dx <= 0 || position.dx >= maxWidth) {
+      speedX = -speedX; // Reverse X direction
+    }
+
+    if (position.dy <= 0 || position.dy >= maxHeight) {
+      speedY = -speedY; // Reverse Y direction
     }
   }
 }
@@ -71,16 +79,16 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     obstacles = [
-      Obstacle(Offset(200, 300), 2),
-      Obstacle(Offset(500, 400), 3),
-      Obstacle(Offset(300, 600), 1.5),
+      Obstacle(Offset(200, 300), 2, 2),  // speedX, speedY
+      Obstacle(Offset(500, 400), -3, 1), // speedX, speedY
+      Obstacle(Offset(300, 600), 1.5, -2), // speedX, speedY
     ];
 
     _ticker = createTicker((_) {
       if (!gameOver) {
         setState(() {
           for (var obstacle in obstacles) {
-            obstacle.moveDown(MediaQuery.of(context).size.height);
+            obstacle.move(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
             if ((playerX - obstacle.position.dx).abs() < 40 &&
                 (playerY - obstacle.position.dy).abs() < 40) {
               gameOver = true;
