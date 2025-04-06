@@ -5,7 +5,17 @@ import 'dart:async';
 import 'obstacle.dart'; // Import the Obstacle class
 import 'game_painter.dart'; // Import the GamePainter
 
+enum Difficulty {
+  easy,
+  medium,
+  hard,
+}
+
 class GameScreen extends StatefulWidget {
+  final Difficulty difficulty;
+
+  GameScreen({required this.difficulty});
+
   @override
   _GameScreenState createState() => _GameScreenState();
 }
@@ -14,6 +24,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   double playerX = 100;
   double playerY = 100;
   bool gameOver = false;
+  int lives = 3; // Set initial lives to 3
+  bool isInGracePeriod = false; // Check if we're in the grace period
   late Ticker _ticker;
   late List<Obstacle> obstacles;
 
@@ -34,7 +46,9 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
             obstacle.move(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
             if ((playerX - obstacle.position.dx).abs() < 40 &&
                 (playerY - obstacle.position.dy).abs() < 40) {
-              gameOver = true;
+              if (!isInGracePeriod) {
+                handleCollision(); // Handle collision if not in grace period
+              }
             }
           }
         });
@@ -49,22 +63,41 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     super.dispose();
   }
 
+  void handleCollision() {
+    // Start the grace period after losing a life
+    setState(() {
+      if (lives > 1) {
+        lives--; // Reduce lives by 1
+        isInGracePeriod = true; // Set grace period flag
+      } else {
+        gameOver = true; // End game when lives run out
+      }
+    });
+
+    // Start the grace period timer (3 seconds)
+    Timer(Duration(seconds: 3), () {
+      setState(() {
+        isInGracePeriod = false; // End grace period
+      });
+    });
+  }
+
   void movePlayer(double dx, double dy) {
-    if (gameOver) return;
+    if (gameOver || isInGracePeriod) return; // Don't allow movement if in grace period
 
     double newPlayerX = playerX + dx;
     double newPlayerY = playerY + dy;
 
     for (var obstacle in obstacles) {
+      // Check if moving into an obstacle
       if ((newPlayerX - obstacle.position.dx).abs() < 40 &&
           (newPlayerY - obstacle.position.dy).abs() < 40) {
-        setState(() {
-          gameOver = true;
-        });
+        handleCollision(); // Handle collision when player moves into obstacle
         return;
       }
     }
 
+    // If no collision, update player's position
     setState(() {
       playerX = newPlayerX;
       playerY = newPlayerY;
@@ -103,11 +136,13 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
             painter: GamePainter(playerX, playerY, obstacles),
           ),
         ),
-        buildControlButtons()
+        buildControlButtons(),
+        buildLivesDisplay(), // Display lives on the screen
       ],
     );
   }
 
+  // Control buttons (left, right, up, down)
   Widget buildControlButtons() {
     return Column(
       children: [
@@ -154,6 +189,18 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
           ],
         ),
       ],
+    );
+  }
+
+  // Display lives on the screen
+  Widget buildLivesDisplay() {
+    return Positioned(
+      top: 40,
+      right: 20,
+      child: Text(
+        'Lives: $lives',
+        style: TextStyle(fontSize: 20, color: Colors.white),
+      ),
     );
   }
 }
