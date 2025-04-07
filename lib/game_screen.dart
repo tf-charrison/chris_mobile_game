@@ -1,9 +1,9 @@
-// game_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'dart:async';
-import 'obstacle.dart'; // Import the Obstacle class
-import 'game_painter.dart'; // Import the GamePainter
+import 'dart:math';
+import 'obstacle.dart';
+import 'game_painter.dart';
 
 enum Difficulty {
   easy,
@@ -24,80 +24,115 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   double playerX = 100;
   double playerY = 100;
   bool gameOver = false;
-  int lives = 3; // Set initial lives to 3
-  bool isInGracePeriod = false; // Check if we're in the grace period
+  int lives = 3;
+  bool isInGracePeriod = false;
   late Ticker _ticker;
   late List<Obstacle> obstacles;
+  int score = 0;
+  late double scoreMultiplier;
+  late Timer scoreTimer;
 
   @override
   void initState() {
     super.initState();
-    obstacles = [
-      Obstacle(Offset(200, 300), 20, dx: 2, dy: 2),  // Horizontal and vertical movement
-      Obstacle(Offset(500, 400), 30, dx: -3, dy: 1),
-      Obstacle(Offset(300, 600), 25, dx: 1.5, dy: -1.5),
-    ];
+
+    int obstacleCount;
+    double speedFactor;
+
+    switch (widget.difficulty) {
+      case Difficulty.easy:
+        obstacleCount = 2;
+        speedFactor = 1.0;
+        scoreMultiplier = 1.0;
+        break;
+      case Difficulty.medium:
+        obstacleCount = 4;
+        speedFactor = 1.5;
+        scoreMultiplier = 2.0;
+        break;
+      case Difficulty.hard:
+        obstacleCount = 6;
+        speedFactor = 2.0;
+        scoreMultiplier = 3.0;
+        break;
+    }
+
+    final random = Random();
+    obstacles = List.generate(obstacleCount, (index) {
+      final position = Offset(
+        100.0 + random.nextDouble() * 300,
+        100.0 + random.nextDouble() * 500,
+      );
+      final dx = (random.nextDouble() * 2 + 1) * speedFactor * (random.nextBool() ? 1 : -1);
+      final dy = (random.nextDouble() * 2 + 1) * speedFactor * (random.nextBool() ? 1 : -1);
+      return Obstacle(position, (20 + random.nextInt(15)).toDouble(), dx: dx, dy: dy);
+    });
 
     _ticker = createTicker((_) {
       if (!gameOver) {
         setState(() {
           for (var obstacle in obstacles) {
-            // Pass screen width and height to handle boundary checks
             obstacle.move(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
             if ((playerX - obstacle.position.dx).abs() < 40 &&
                 (playerY - obstacle.position.dy).abs() < 40) {
               if (!isInGracePeriod) {
-                handleCollision(); // Handle collision if not in grace period
+                handleCollision();
               }
             }
           }
         });
       }
     });
+
     _ticker.start();
+
+    scoreTimer = Timer.periodic(Duration(seconds: 1), (_) {
+      if (!gameOver && !isInGracePeriod) {
+        setState(() {
+          score += (10 * scoreMultiplier).toInt();
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     _ticker.dispose();
+    scoreTimer.cancel();
     super.dispose();
   }
 
   void handleCollision() {
-    // Start the grace period after losing a life
     setState(() {
       if (lives > 1) {
-        lives--; // Reduce lives by 1
-        isInGracePeriod = true; // Set grace period flag
+        lives--;
+        isInGracePeriod = true;
       } else {
-        gameOver = true; // End game when lives run out
+        gameOver = true;
       }
     });
 
-    // Start the grace period timer (3 seconds)
     Timer(Duration(seconds: 3), () {
       setState(() {
-        isInGracePeriod = false; // End grace period
+        isInGracePeriod = false;
       });
     });
   }
 
   void movePlayer(double dx, double dy) {
-    if (gameOver || isInGracePeriod) return; // Don't allow movement if in grace period
+    if (gameOver || isInGracePeriod) return;
 
     double newPlayerX = playerX + dx;
     double newPlayerY = playerY + dy;
 
     for (var obstacle in obstacles) {
-      // Check if moving into an obstacle
       if ((newPlayerX - obstacle.position.dx).abs() < 40 &&
           (newPlayerY - obstacle.position.dy).abs() < 40) {
-        handleCollision(); // Handle collision when player moves into obstacle
+        handleCollision();
         return;
       }
     }
 
-    // If no collision, update player's position
     setState(() {
       playerX = newPlayerX;
       playerY = newPlayerY;
@@ -110,16 +145,26 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
       return Scaffold(
         appBar: AppBar(title: Text('Game Over')),
         body: Center(
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text('Restart'),
-            style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Score: $score',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text('Restart'),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -137,12 +182,12 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
           ),
         ),
         buildControlButtons(),
-        buildLivesDisplay(), // Display lives on the screen
+        buildLivesDisplay(),
+        buildScoreDisplay(),
       ],
     );
   }
 
-  // Control buttons (left, right, up, down)
   Widget buildControlButtons() {
     return Column(
       children: [
@@ -192,13 +237,23 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     );
   }
 
-  // Display lives on the screen
   Widget buildLivesDisplay() {
     return Positioned(
       top: 40,
       right: 20,
       child: Text(
         'Lives: $lives',
+        style: TextStyle(fontSize: 20, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget buildScoreDisplay() {
+    return Positioned(
+      top: 40,
+      left: 20,
+      child: Text(
+        'Score: $score',
         style: TextStyle(fontSize: 20, color: Colors.white),
       ),
     );
