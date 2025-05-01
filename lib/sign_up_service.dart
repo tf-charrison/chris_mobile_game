@@ -1,13 +1,14 @@
 import 'dart:convert'; // For JSON encoding/decoding
 import 'package:http/http.dart' as http;
 
-Future<bool> signUpUser(String email, String password, String passwordConfirmation) async {
+Future<bool> signUpUser(String username, String email, String password, String passwordConfirmation) async {
   // Define the URL for the register API on your Rails server
   final url = Uri.parse('http://10.0.2.2:3000/register'); // Update this URL if needed
 
-  // Prepare the request body with email, password, and password_confirmation
+  // Prepare the request body with username, email, password, and password_confirmation
   final body = json.encode({
     'user': {
+      'username': username, // Add username
       'email': email,
       'password': password,
       'password_confirmation': passwordConfirmation,

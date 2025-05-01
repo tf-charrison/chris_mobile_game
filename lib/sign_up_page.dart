@@ -7,6 +7,7 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
+  final TextEditingController usernameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
@@ -18,6 +19,7 @@ class _SignUpPageState extends State<SignUpPage> {
       isLoading = true; // Show loading indicator
     });
 
+    String username = usernameController.text;
     String email = emailController.text;
     String password = passwordController.text;
     String confirmPassword = confirmPasswordController.text;
@@ -31,7 +33,7 @@ class _SignUpPageState extends State<SignUpPage> {
     }
 
     // Call the sign-up method from your service
-    bool success = await signUpUser(email, password, confirmPassword);
+    bool success = await signUpUser(username, email, password, confirmPassword);
 
     setState(() {
       isLoading = false; // Hide loading indicator
@@ -76,6 +78,16 @@ class _SignUpPageState extends State<SignUpPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Username Field
+            TextField(
+              controller: usernameController,
+              decoration: InputDecoration(
+                labelText: 'Username',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 16),
+            // Email Field
             TextField(
               controller: emailController,
               decoration: InputDecoration(
@@ -84,6 +96,7 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
             ),
             SizedBox(height: 16),
+            // Password Field
             TextField(
               controller: passwordController,
               obscureText: true,
@@ -93,6 +106,7 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
             ),
             SizedBox(height: 16),
+            // Confirm Password Field
             TextField(
               controller: confirmPasswordController,
               obscureText: true,

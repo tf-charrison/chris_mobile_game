@@ -4,6 +4,9 @@ import 'dart:async';
 import 'dart:math';
 import 'obstacle.dart';
 import 'game_painter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'score_service.dart'; // update with actual path
 
 enum Difficulty {
   easy,
@@ -109,6 +112,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         isInGracePeriod = true;
       } else {
         gameOver = true;
+        saveScore();  // Call the API to save the score when game is over.
       }
     });
 
@@ -137,6 +141,17 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
       playerX = newPlayerX;
       playerY = newPlayerY;
     });
+  }
+
+  // Function to save the score to the API
+  Future<void> saveScore() async {
+    bool success = await submitScore(score, widget.difficulty.name);
+
+    if (success) {
+      print("Score saved successfully!");
+    } else {
+      print("Failed to save score.");
+    }
   }
 
   @override
