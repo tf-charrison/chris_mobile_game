@@ -1,8 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'login_page.dart';
 import 'game_screen.dart';
-import 'leaderboard_screen.dart'; // Make sure this import is correct
+import 'leaderboard_screen.dart';
 
 class StartScreen extends StatelessWidget {
+  final _secureStorage = FlutterSecureStorage(); // Secure storage instance
+
+  // Logout function to clear the token and navigate to login
+  Future<void> logout(BuildContext context) async {
+    await _secureStorage.delete(key: 'jwt_token'); // Clear the JWT token
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => LoginPage()), // Navigate to login page
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -11,6 +24,20 @@ class StartScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Logout Button
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                onPressed: () => logout(context), // Call logout when pressed
+                child: Text('Logout', style: TextStyle(fontSize: 20)),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                  backgroundColor: Colors.red, // Customize the color if you like
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+            // Difficulty selection buttons
             Text('Select Difficulty', style: TextStyle(fontSize: 24, color: Colors.white)),
             const SizedBox(height: 30),
             difficultyButton(context, Difficulty.easy, 'Easy'),
@@ -63,7 +90,7 @@ class StartScreen extends StatelessWidget {
         child: Text('Leaderboard', style: TextStyle(fontSize: 20)),
         style: ElevatedButton.styleFrom(
           padding: EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-          backgroundColor: Colors.orange, // You can choose a different color if you like
+          backgroundColor: Colors.orange,
           foregroundColor: Colors.white,
         ),
       ),
