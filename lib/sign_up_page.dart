@@ -1,42 +1,52 @@
 import 'package:flutter/material.dart';
-import 'login_service.dart'; // This is where your login logic resides
+import 'sign_up_service.dart'; // Import the sign-up service
 
-class LoginPage extends StatefulWidget {
+class SignUpPage extends StatefulWidget {
   @override
-  _LoginPageState createState() => _LoginPageState();
+  _SignUpPageState createState() => _SignUpPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
   bool isLoading = false;
 
-  // Handle login action
-  Future<void> _login() async {
+  // Handle sign-up action
+  Future<void> _signUp() async {
     setState(() {
       isLoading = true; // Show loading indicator
     });
 
     String email = emailController.text;
     String password = passwordController.text;
+    String confirmPassword = confirmPasswordController.text;
 
-    // Call the login method from your service
-    bool success = await loginUser(email, password);
+    if (password != confirmPassword) {
+      _showErrorDialog('Passwords do not match');
+      setState(() {
+        isLoading = false; // Hide loading indicator
+      });
+      return;
+    }
+
+    // Call the sign-up method from your service
+    bool success = await signUpUser(email, password, confirmPassword);
 
     setState(() {
       isLoading = false; // Hide loading indicator
     });
 
     if (success) {
-      // Redirect to StartScreen after successful login
-      Navigator.pushReplacementNamed(context, '/start');
+      // Redirect to login page after successful sign-up
+      Navigator.pushReplacementNamed(context, '/login');
     } else {
-      // Show error if login fails
-      _showErrorDialog('Invalid credentials');
+      // Show error if sign-up fails
+      _showErrorDialog('Error creating account');
     }
   }
 
-  // Show an error dialog if login fails
+  // Show an error dialog if sign-up fails
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -60,7 +70,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login')),
+      appBar: AppBar(title: Text('Sign Up')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -83,19 +93,20 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
             SizedBox(height: 16),
+            TextField(
+              controller: confirmPasswordController,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Confirm Password',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 16),
             isLoading
                 ? CircularProgressIndicator()
                 : ElevatedButton(
-              onPressed: _login,
-              child: Text('Login'),
-            ),
-            SizedBox(height: 16),
-            TextButton(
-              onPressed: () {
-                // Navigate to the Sign-Up page
-                Navigator.pushNamed(context, '/sign_up');
-              },
-              child: Text('Don\'t have an account? Sign Up'),
+              onPressed: _signUp,
+              child: Text('Sign Up'),
             ),
           ],
         ),
